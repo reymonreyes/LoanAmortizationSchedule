@@ -1,9 +1,113 @@
 ﻿@page "/"
+@using LoanAmortizationSchedule.Core;
+@using LoanAmortizationSchedule.Models;
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Loan Amortization Schedule</PageTitle>
 
-<h1>Hello, world!</h1>
+<h1>Intergalactic Bank</h1>
+<h4>Loan Amortiation Schedule</h4>
+<div class="row">
+    <div class="col-4">
+        <div class="alert alert-danger" role="alert" style="display: @(_hasError ? "inherit" : "none");">
+            @_error
+        </div>
+        <form>
+            <div class="row mb-2">
+                <label class="col-md-4 col-form-label">Loan Amount</label>
+                <div class="col-md-8">
+                    <input type="number" class="form-control text-end" @bind="_loan.Amount" />
+                </div>
+            </div>
+            <div class="row mb-2">
+                <label class="col-md-4 col-form-label">Annual Interest Rate</label>
+                <div class="col-md-8 ">
+                    <div class="input-group">
+                        <input type="number" class="form-control text-end" @bind="_loan.AnnualInterestRate"/>
+                        <span class="input-group-text">%</span>
+                    </div>
+                </div>
+            </div>
+            <div class="row mb-2">
+                <label class="col-md-4 col-form-label">Number of Years</label>
+                <div class="col-md-8">
+                    <input type="number" class="form-control text-end" @bind="_loan.NumberOfYears" />
+                </div>
+            </div>
+            <div class="row mb-2">
+                <label class="col-md-4 col-form-label">Months to Pay</label>
+                <div class="col-md-8">
+                    <input type="text" class="form-control-plaintext text-end" @bind="_loan.NumberOfPayments" />
+                </div>
+            </div>
+            <div class="row mb-2">
+                <button type="button" class="btn btn-primary" @onclick="() => Calculate()">Calculate</button>
+            </div>
+        </form>
+    </div>
+    <div class="col-8"></div>
+</div>
+<div class="row">
+    <div class="col-6">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th class="text-center">Period</th>
+                    <th class="text-center">Payment</th>
+                    <th class="text-center">Principal</th>
+                    <th class="text-center">Interest</th>
+                    <th class="text-center">Balance</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var schedule in _loan.AmortizationSchedule)
+                {
+                    <tr>
+                        <td class="text-end">@schedule.Period</td>
+                        <td class="text-end">@schedule.TotalMonthlyPayment.ToString("C")</td>
+                        <td class="text-end">@schedule.Principal.ToString("C")</td>
+                        <td class="text-end">@schedule.Interest.ToString("C")</td>
+                        <td class="text-end">@schedule.Balance.ToString("C")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="col-6"></div>
+</div>
+@code{
+    private int _interestRatePercent;
+    private Loan _loan = new Loan { Amount = 0, AnnualInterestRate = 0, NumberOfYears = 0 };
+    private bool _hasError = false;
+    private string _error = "";
 
-Welcome to your new app.
+    private void Calculate()
+    {
+        Console.WriteLine("Calculate()");
+        var loanCalculator = new LoanAmortizationScheduleCalculator();
+        try
+        {
+            _hasError = false;
+            var schedules = loanCalculator.Calculate((int)_loan.Amount, _loan.AnnualInterestRate, _loan.NumberOfYears);
+            _loan.NumberOfPayments = loanCalculator.NumberOfPayments;
 
-<SurveyPrompt Title="How is Blazor working for you?" />
+            var amortizationSchedule = new List<Models.AmortizationSchedule>();
+            foreach (var schedule in schedules)
+            {
+                amortizationSchedule.Add(new Models.AmortizationSchedule
+                    {
+                        Period = schedule.Period,
+                        TotalMonthlyPayment = decimal.Round(loanCalculator.TotalMonthlyPayment, 0),
+                        Principal = decimal.Round(schedule.Principal, 0),
+                        Interest = decimal.Round(schedule.Interest, 0),
+                        Balance = decimal.Round(schedule.Balance, 0)
+                    });
+            }
+            _loan.AmortizationSchedule = amortizationSchedule;
+        }
+        catch(Exception exc)
+        {
+            _error = exc.Message;
+            _hasError = true;
+        }
+    }
+}
