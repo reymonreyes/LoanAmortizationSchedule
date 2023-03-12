@@ -2,7 +2,7 @@
 @using LoanAmortizationSchedule.Core;
 @using LoanAmortizationSchedule.Models;
 
-<PageTitle>Loan Amortization Schedule</PageTitle>
+<PageTitle>Intergalactic Bank - Loan Amortization Schedule Calculator</PageTitle>
 
 <h1>Intergalactic Bank</h1>
 <h4>Loan Amortiation Schedule</h4>
@@ -82,7 +82,7 @@
 
     private void Calculate()
     {
-        Console.WriteLine("Calculate()");
+        Console.WriteLine("Calculating...");
         var loanCalculator = new LoanAmortizationScheduleCalculator();
         try
         {
@@ -103,11 +103,13 @@
                     });
             }
             _loan.AmortizationSchedule = amortizationSchedule;
+            Console.WriteLine("Calculation complete.");
         }
         catch(Exception exc)
         {
             _error = exc.Message;
             _hasError = true;
+            Console.WriteLine($"Calculation error {exc.Message}");
         }
     }
 }
